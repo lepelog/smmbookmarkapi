@@ -2,6 +2,9 @@
 Fully written in Python3
 
 ##Installation
+###From Github
+Run `pip3 install https://github.com/lepelog/smmbookmarkapi/archive/master.zip`.
+
 ###From source
 Clone the Repository, change to this directory and execute `python3 setup.py install`.
 
