@@ -31,4 +31,23 @@ To uninstall this package with pip run `pip3 uninstall smmbookmarkapi`
 ```
 
 ###Bookmarking a level
-TODO
+####Notes about needed tokens
+To bookmark a level, a session-cookie and a csrf-token is needed, but this token can by retrieved with the cookie. As far as I know, these never expire (WARNING, not sure at all, will test this), so you can get the cookie using [this help](https://makersofmario.com/help), requesting the csrf-token vith this programm and store it with the session-cookie for further requests. Example:
+```python
+>>> session_cookie = 'insertcookiedatahere'
+>>> csrf_token = SMMBookmarkApi.get_token_for_session(session_cookie)
+>>> csrf_token
+'theretrievedtoken'
+```
+If you store it, you can use it in combination with the session-cookie to bookmark level:
+```python
+>>> from smmbookmarkapi import SMMBookmarkApi
+>>> api = SMMBookmarkApi(csrf_token='theretrievedtoken', smmbookmark_session='insertcookiedatahere')
+```
+####Using the bookmark-function
+```python
+>>> api.bookmark('LEVEL-ID') #Bookmark a level by id
+>>> lvl.bookmark()           #Bookmark this course-object
+>>> api,remove_bookmark('LEVEL-ID')
+>>> lvl.remove_bookmark()
+```

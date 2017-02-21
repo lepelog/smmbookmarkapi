@@ -30,11 +30,9 @@ class SMMBookmarkApi:
     """
     Class for interacting with the Super Mario Maker Bookmark Page
     To set/remove bookmarks, a session-cookie and a csrf-token are needed, but the csrf-token can be
-    retrieved using the session-cookie. https://makersofmario.com/help has a good explanation how to get this
-    and what is possible with this cookie
+    retrieved using the session-cookie and the static method `get_token_for_session`.
+    https://makersofmario.com/help has a good explanation how to get the cookie and what is possible with that.
     
-    Tip: if a session-cookie is present in the Api, you can use `check_tokens` to get the csrf-token, which can be
-    cached and reused forever (as far as I know)
     """
     mmbasicaddress='https://supermariomakerbookmark.nintendo.net/'
     csrf_finder_regex=re.compile('<meta name="csrf-token" content="(?P<token>[a-zA-Z0-9/=+]+)" />')
@@ -47,6 +45,20 @@ class SMMBookmarkApi:
         """
         self.csrf_token=csrf_token
         self.smmbookmark_session=smmbookmark_session
+
+    @staticmethod
+    def get_token_for_session(smmbookmark_session):
+        cookies = {'_supermariomakerbookmark_session':smmbookmark_session}
+        response = requests.get(SMMBookmarkApi.mmbasicaddress,cookies=cookies)
+        response.raise_for_status()
+        match = SMMBookmarkApi.csrf_finder_regex.search(response.text)
+        if match is None:
+            return None
+        token = match.group('token')
+        if not token is None:
+            return token
+        else:
+            return None
 
     def getstats(self,courseid):
         """
@@ -61,34 +73,17 @@ class SMMBookmarkApi:
         """
         return Course(api=self, stats=_getstats(courseid))
 
-    def check_tokens(self):
-        if not self.smmbookmark_session is None:
-            if not self.csrf_token is None:
-                return True
-            else:
-                return self._get_token_for_session()
-        else:
-            return False
-
-    def _get_token_for_session(self):
-        cookies = {'_supermariomakerbookmark_session':self.smmbookmark_session}
-        response = requests.get(self.mmbasicaddress,cookies=cookies)
-        response.raise_for_status()
-        match = self.csrf_finder_regex.search(response.text)
-        if match is None:
-            return False
-        token = match.group('token')
-        if not token is None:
-            self.csrf_token=token
-            return True
-        else:
-            return False
+    def _check_tokens(self):
+        if self.smmbookmark_session is None:
+            raise AttributeError('smmbookmark_session is None!')
+        if self.csrf_token is None:
+            raise AttributeError('csrf_token is None!')
 
     def bookmark(self, levelcode):
         """
         Bookmark the given level-id
         """
-        self.check_tokens()
+        self._check_tokens()
         headers = {'X-CSRF-Token':self.csrf_token}
         cookies = {'_supermariomakerbookmark_session':self.smmbookmark_session}
         response=requests.post(self.mmbasicaddress+'courses/'+levelcode+'/play_at_later', headers=headers, cookies=cookies)
@@ -99,7 +94,7 @@ class SMMBookmarkApi:
         """
         Remove Bookmark of the given level-id
         """
-        self.check_tokens()
+        self._check_tokens()
         headers = {'X-CSRF-Token':self.csrf_token}
         cookies = {'_supermariomakerbookmark_session':self.smmbookmark_session}
         response=requests.delete(self.mmbasicaddress+'bookmarks/'+levelcode, headers=headers, cookies=cookies)
